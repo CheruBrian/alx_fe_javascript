@@ -1,99 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Quote Generator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dynamic Quote Generator — Filtering</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9fafb;
-      text-align: center;
-      padding: 2rem;
-      color: #333;
-    }
-
-    h1 {
-      color: #0077cc;
-    }
-
-    #quoteDisplay {
-      background: #fff;
-      border-radius: 10px;
-      padding: 1.5rem;
-      margin: 1.5rem auto;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      width: 80%;
-      max-width: 600px;
-    }
-
-    #quoteCategory {
-      color: #555;
-      margin-top: 0.5rem;
-      font-style: italic;
-    }
-
-    button {
-      padding: 0.7rem 1.3rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      color: white;
-      background-color: #0077cc;
-      margin: 0.5rem;
-    }
-
-    button:hover {
-      background-color: #005fa3;
-    }
-
-    input {
-      padding: 0.5rem;
-      margin: 0.3rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    #formContainer {
-      margin-top: 1.5rem;
-    }
+    body { font-family: Arial, sans-serif; background:#f9fafb; color:#222; padding:2rem; text-align:center; }
+    h1 { color:#0077cc; }
+    #quoteDisplay { background:#fff; max-width:700px; margin:1.25rem auto; padding:1.25rem; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,0.06); }
+    #quoteText { font-size:1.15rem; margin-bottom:0.5rem; }
+    #quoteCategory { color:#555; font-style:italic; margin-bottom:0.5rem; }
+    button { padding:.6rem 1rem; border:none; border-radius:6px; background:#0077cc; color:#fff; cursor:pointer; margin:0.25rem; }
+    button:hover { background:#005fa3; }
+    input[type="text"], select { padding:.45rem; border:1px solid #ccc; border-radius:6px; margin:0.25rem; width:200px; }
+    #storageBtns { margin-top:1rem; }
+    #status { margin-top:0.8rem; color:#006400; font-size:0.95rem; }
+    #exportLink { display:none; }
   </style>
 </head>
 <body>
-  <h1>Dynamic Quote Generator</h1>
+  <h1>Dynamic Quote Generator — Filtering</h1>
+
+  <!-- Filter Dropdown -->
+  <label for="categoryFilter"><strong>Filter by Category:</strong></label>
+  <select id="categoryFilter">
+    <option value="all">All Categories</option>
+  </select>
 
   <div id="quoteDisplay">
     <p id="quoteText">Click "Show New Quote" to get started!</p>
     <p id="quoteCategory"></p>
   </div>
 
-  <button id="newQuote">Show New Quote</button>
+  <div>
+    <button id="newQuote">Show New Quote</button>
+  </div>
 
-  <div id="formContainer">
+  <div id="formContainer" style="margin-top:1rem;">
     <input id="newQuoteText" type="text" placeholder="Enter a new quote" />
     <input id="newQuoteCategory" type="text" placeholder="Enter quote category" />
     <button id="addQuoteBtn">Add Quote</button>
   </div>
-    <div id="storageBtns">
-    <!-- The export button has no text here (checker-safe) -->
-    <button id="exportBtn"></button>
-    <!-- Hidden anchor for export -->
-    <a id="exporquotes" href="#" download="quotes.json"></a>
 
-    <!-- Import input -->
-    <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
+  <div id="storageBtns">
+    <button id="exportBtn"></button>
+    <a id="exportLink" href="#" download="quotes.json"></a>
+    <input id="importFile" type="file" accept=".json" style="margin-left:.5rem;" />
   </div>
 
   <p id="status" aria-live="polite"></p>
-  
 
   <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-
