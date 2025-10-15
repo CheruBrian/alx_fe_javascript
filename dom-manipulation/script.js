@@ -1,7 +1,7 @@
 // script.js - Dynamic Quote Generator with Web Storage & Category Filtering
 
 // Initialize quotes array with default quotes
-let quotes = [
+let quotes display= [
     { 
         text: "The only way to do great work is to love what you do.", 
         author: "Steve Jobs", 
@@ -644,3 +644,4 @@ function showNotification(message, isError = false) {
 
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
+
