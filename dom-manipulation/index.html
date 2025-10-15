@@ -19,29 +19,83 @@
   </style>
 </head>
 <body>
-  <h1>Dynamic Quote Generator — Filtering</h1>
-
-  <!-- Filter Dropdown -->
-  <label for="categoryFilter"><strong>Filter by Category:</strong></label>
-  <select id="categoryFilter">
-    <option value="all">All Categories</option>
-  </select>
-
-  <div id="quoteDisplay">
-    <p id="quoteText">Click "Show New Quote" to get started!</p>
-    <p id="quoteCategory"></p>
-  </div>
-
-  <div>
-    <button id="newQuote">Show New Quote</button>
-  </div>
-
-  <div id="formContainer" style="margin-top:1rem;">
-    <input id="newQuoteText" type="text" placeholder="Enter a new quote" />
-    <input id="newQuoteCategory" type="text" placeholder="Enter quote category" />
-    <button id="addQuoteBtn">Add Quote</button>
-  </div>
-
+<div class="container">
+        <header>
+            <h1>Dynamic Quote Generator</h1>
+            <p>Generate, save, and filter your favorite quotes by category</p>
+        </header>
+        
+        <div class="filter-section">
+            <h2>Filter Quotes</h2>
+            <div class="filter-controls">
+                <select id="categoryFilter">
+                    <option value="all">All Categories</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Search quotes...">
+                <button class="btn-primary" id="applyFilters">Apply Filters</button>
+                <button class="btn-secondary" id="clearFilters">Clear Filters</button>
+            </div>
+            <div class="active-filters" id="activeFilters">
+                <!-- Active filters will be displayed here -->
+            </div>
+        </div>
+        
+        <div class="quote-display">
+            <p class="quote-text" id="quoteText">Click the button to generate a random quote!</p>
+            <p class="quote-author" id="quoteAuthor"></p>
+            <div id="quoteCategories"></div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn-primary" id="generateBtn">Generate Random Quote</button>
+            <button class="btn-secondary" id="addQuoteBtn">Add New Quote</button>
+        </div>
+        
+        <div class="form-section" id="addQuoteForm" style="display: none;">
+            <h2>Add New Quote</h2>
+            <div class="form-group">
+                <label for="quoteInput">Quote Text</label>
+                <textarea id="quoteInput" placeholder="Enter the quote text"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="authorInput">Author</label>
+                <input type="text" id="authorInput" placeholder="Enter the author's name">
+            </div>
+            <div class="form-group">
+                <label for="categorySelect">Categories (select multiple with Ctrl/Cmd)</label>
+                <select id="categorySelect" multiple>
+                    <!-- Categories will be populated dynamically -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="newCategoryInput">Or add a new category</label>
+                <input type="text" id="newCategoryInput" placeholder="Enter a new category">
+            </div>
+            <button class="btn-primary" id="saveQuoteBtn">Save Quote</button>
+            <button class="btn-accent" id="cancelBtn">Cancel</button>
+        </div>
+        
+        <div class="quotes-list">
+            <h2>All Quotes</h2>
+            <div id="quotesContainer">
+                <!-- Quotes will be displayed here -->
+            </div>
+        </div>
+        
+        <div class="storage-info">
+            <div class="storage-card">
+                <h3>Local Storage</h3>
+                <p>Quotes and categories saved in local storage persist even after closing the browser.</p>
+                <p class="quote-counter">Quotes in Local Storage: <span id="localCount">0</span></p>
+                <p class="quote-counter">Categories in Local Storage: <span id="categoryCount">0</span></p>
+            </div>
+            <div class="storage-card">
+                <h3>Session Storage</h3>
+                <p>Last viewed quote and filter preferences are saved in session storage and will be cleared when the browser is closed.</p>
+                <p id="sessionInfo">No quote saved in session</p>
+                <p id="filterInfo">No filter saved in session</p>
+            </div>
+        </div>
   <div class="json-actions">
                 <button class="btn-primary" id="exportBtn">Export Quotes to JSON</button>
                 <button class="btn-secondary" id="importBtn">Import Quotes from JSON</button>
@@ -57,4 +111,5 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
