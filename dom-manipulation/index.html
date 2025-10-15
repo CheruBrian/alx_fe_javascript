@@ -42,14 +42,19 @@
     <button id="addQuoteBtn">Add Quote</button>
   </div>
 
-  <div id="storageBtns">
-    <button id="exportBtn"></button>
-    <a id="exportLink" href="#" download="quotes.json"></a>
-    <input id="importFile" type="file" accept=".json" style="margin-left:.5rem;" />
-  </div>
-
+  <div class="json-actions">
+                <button class="btn-primary" id="exportBtn">Export Quotes to JSON</button>
+                <button class="btn-secondary" id="importBtn">Import Quotes from JSON</button>
+            </div>
+            
+            <div class="file-input" id="fileInputContainer" style="display: none;">
+                <input type="file" id="importFile" accept=".json">
+                <button class="btn-accent" id="processImportBtn">Process Import</button>
+                <button class="btn-secondary" id="cancelImportBtn">Cancel</button>
+            </div>
   <p id="status" aria-live="polite"></p>
 
   <script src="script.js"></script>
 </body>
 </html>
+
