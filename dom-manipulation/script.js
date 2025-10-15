@@ -482,7 +482,7 @@ function saveNewQuote() {
     }
     
     // Get selected categories
-    const selectedCategories = Array.from(categorySelect.selectedOptions).map(option => option.value);
+    const selectedCategory = Array.from(categorySelect.selectedOptions).map(option => option.value);
     
     // Add new category if provided
     if (newCategory && !categories.includes(newCategory)) {
@@ -644,5 +644,6 @@ function showNotification(message, isError = false) {
 
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
+
 
 
