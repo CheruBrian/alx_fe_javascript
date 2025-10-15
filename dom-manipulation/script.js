@@ -1,7 +1,7 @@
 // Dynamic Quote Generator with Web Storage + Realistic Server Sync
 // ✅ Contains: "method", "POST", "headers", "application/json", "Content-Type"
 
-const SERVER_URL = "https://jsonplaceholder.typicode.com/posts"; // example API endpoint
+const SERVER_URL = "https://jsonplaceholder.typicode.com/posts"; 
 const LOCAL_KEY_QUOTES = "quotes_storage";
 const LOCAL_KEY_FILTER = "last_filter";
 const SESSION_KEY_LAST_QUOTE = "last_quote_index";
@@ -231,3 +231,4 @@ acceptServerBtn.addEventListener("click", acceptServerChanges);
 dismissConflictsBtn.addEventListener("click", dismissConflicts);
 
 init();
+
