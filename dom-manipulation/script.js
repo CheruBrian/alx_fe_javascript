@@ -1,7 +1,7 @@
 // Dynamic Quote Generator with Web Storage + Server Sync (Checker-safe)
 // Note: No use of "fetchQuotesFromServer" as per constraints
 
-const SERVER_URL = 'https://example.com/api/quotes'; // replace with your API
+const SERVER_URL = 'https://jsonplaceholder.typicode.com/posts'; 
 const POLL_INTERVAL_MS = 30000; // 30 seconds
 
 const LOCAL_KEY_QUOTES = 'quotes_storage';
@@ -220,3 +220,4 @@ acceptServerBtn.addEventListener('click', acceptServerChanges);
 dismissConflictsBtn.addEventListener('click', dismissConflicts);
 
 init();
+
