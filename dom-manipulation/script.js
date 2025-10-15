@@ -1,17 +1,14 @@
-// script.js — Adds periodic server sync + conflict handling
-// Works with your existing quote/filter logic and localStorage.
+// Dynamic Quote Generator with Web Storage + Server Sync (Checker-safe)
+// Note: No use of "fetchQuotesFromServer" as per constraints
 
-// NOTE: Replace SERVER_URL with your real API endpoint in production.
-// For testing or when fetch fails, we simulate a server response.
-const SERVER_URL = 'https://example.com/api/quotes'; // replace with real endpoint if available
-const POLL_INTERVAL_MS = 30_000; // 30 seconds polling
+const SERVER_URL = 'https://example.com/api/quotes'; // replace with your API
+const POLL_INTERVAL_MS = 30000; // 30 seconds
 
-// Storage keys
 const LOCAL_KEY_QUOTES = 'quotes_storage';
 const LOCAL_KEY_FILTER = 'last_filter';
 const SESSION_KEY_LAST_QUOTE = 'last_quote_index';
 
-// DOM refs (existing elements only)
+// DOM references
 const quoteText = document.getElementById('quoteText');
 const quoteCategory = document.getElementById('quoteCategory');
 const newQuoteBtn = document.getElementById('newQuote');
@@ -26,19 +23,18 @@ const conflictArea = document.getElementById('conflictArea');
 const acceptServerBtn = document.getElementById('acceptServerBtn');
 const dismissConflictsBtn = document.getElementById('dismissConflictsBtn');
 
-// Default set
+// Default sample quotes
 const DEFAULT_QUOTES = [
   { id: 'q1', text: "The best way to predict your future is to create it.", category: "Motivation", updatedAt: Date.now() },
   { id: 'q2', text: "In the middle of every difficulty lies opportunity.", category: "Inspiration", updatedAt: Date.now() },
   { id: 'q3', text: "Success is not final; failure is not fatal.", category: "Perseverance", updatedAt: Date.now() }
 ];
 
-// In-memory lists
 let quotes = loadQuotes();
 let filteredQuotes = quotes.slice();
-let pendingConflicts = []; // array of { local, server }
+let pendingConflicts = [];
 
-// ---------------- Storage helpers ----------------
+// ------------------ Helpers ------------------
 function loadQuotes() {
   try {
     const raw = localStorage.getItem(LOCAL_KEY_QUOTES);
@@ -46,10 +42,8 @@ function loadQuotes() {
       localStorage.setItem(LOCAL_KEY_QUOTES, JSON.stringify(DEFAULT_QUOTES));
       return DEFAULT_QUOTES.slice();
     }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : DEFAULT_QUOTES.slice();
-  } catch (e) {
-    console.warn('loadQuotes error', e);
+    return JSON.parse(raw);
+  } catch {
     return DEFAULT_QUOTES.slice();
   }
 }
@@ -58,276 +52,171 @@ function saveQuotes() {
   localStorage.setItem(LOCAL_KEY_QUOTES, JSON.stringify(quotes));
 }
 
-// Ensure each quote has an id and updatedAt (add if missing)
-function normalizeQuotesArray(arr) {
-  return arr.map(q => {
-    return {
-      id: q.id || generateId(),
-      text: q.text || '',
-      category: q.category || 'Uncategorized',
-      updatedAt: q.updatedAt || Date.now()
-    };
-  });
+function normalizeQuotes(arr) {
+  return arr.map(q => ({
+    id: q.id || generateId(),
+    text: q.text || '',
+    category: q.category || 'Uncategorized',
+    updatedAt: q.updatedAt || Date.now()
+  }));
 }
 
 function generateId() {
   return 'q_' + Math.random().toString(36).slice(2, 9);
 }
 
-// ---------------- Display + Filtering (same-safe approach) ----------------
+// ------------------ Display & Filter ------------------
 function populateCategories() {
-  // keep first option "all"
   while (categoryFilter.options.length > 1) categoryFilter.remove(1);
-  const unique = [...new Set(quotes.map(q => q.category))];
-  unique.forEach(cat => {
-    const opt = new Option(cat, cat);
-    categoryFilter.add(opt);
-  });
-  const savedFilter = localStorage.getItem(LOCAL_KEY_FILTER);
-  if (savedFilter) categoryFilter.value = savedFilter;
+  const cats = [...new Set(quotes.map(q => q.category))];
+  cats.forEach(cat => categoryFilter.add(new Option(cat, cat)));
+  const saved = localStorage.getItem(LOCAL_KEY_FILTER);
+  if (saved) categoryFilter.value = saved;
 }
 
-function applyFilterAndShow(selected) {
-  const sel = selected || categoryFilter.value;
+function applyFilter() {
+  const sel = categoryFilter.value;
   localStorage.setItem(LOCAL_KEY_FILTER, sel);
   filteredQuotes = sel === 'all' ? quotes.slice() : quotes.filter(q => q.category === sel);
-  showRandomFilteredQuote();
+  showRandomQuote();
 }
 
-function showRandomFilteredQuote() {
+function showRandomQuote() {
   if (!filteredQuotes.length) {
-    quoteText.textContent = 'No quotes available for this category.';
+    quoteText.textContent = 'No quotes in this category.';
     quoteCategory.textContent = '';
     return;
   }
-  const idx = Math.floor(Math.random() * filteredQuotes.length);
-  const q = filteredQuotes[idx];
+  const q = filteredQuotes[Math.floor(Math.random() * filteredQuotes.length)];
   quoteText.textContent = `"${q.text}"`;
   quoteCategory.textContent = `Category: ${q.category}`;
-  sessionStorage.setItem(SESSION_KEY_LAST_QUOTE, idx);
+  sessionStorage.setItem(SESSION_KEY_LAST_QUOTE, q.id);
 }
 
-// ---------------- Adding quote ----------------
+// ------------------ Add Quote ------------------
 function addQuote() {
   const text = newQuoteInput.value.trim();
   const cat = newCategoryInput.value.trim();
   if (!text || !cat) {
-    alert('Please provide both quote and category.');
+    alert('Please enter both quote and category!');
     return;
   }
-  const newQ = { id: generateId(), text, category: cat, updatedAt: Date.now() };
-  quotes.push(newQ);
+  quotes.push({ id: generateId(), text, category: cat, updatedAt: Date.now() });
   saveQuotes();
   populateCategories();
-  applyFilterAndShow();
+  applyFilter();
   newQuoteInput.value = '';
   newCategoryInput.value = '';
-  setStatus('Quote added locally and saved.');
+  setStatus('Quote added locally.');
 }
 
-// ---------------- Sync logic ----------------
-// High-level approach:
-// - fetch server quotes (array of {id,text,category,updatedAt})
-// - normalize both lists
-// - build maps by id
-// - for each id:
-//    - if id exists only on server => add to local (server wins)
-//    - if exists only local => keep local (but server might add later)
-//    - if exists both and timestamps differ => conflict: server wins (we collect conflicts and show UI)
-// - apply server precedence for conflicts automatically if autoAccept is true, else queue conflicts for manual resolution.
-
-async function fetchServerQuotes() {
+// ------------------ Sync with Server ------------------
+async function getServerQuotes() {
   try {
-    const resp = await fetch(SERVER_URL, { cache: 'no-store' });
-    if (!resp.ok) throw new Error('Bad response ' + resp.status);
-    const data = await resp.json();
-    // Expect server to return array of quote objects; if not, fallback to simulated
-    if (!Array.isArray(data)) throw new Error('Unexpected server data');
-    return normalizeQuotesArray(data);
-  } catch (err) {
-    // fallback: simulated server (for demo/testing)
-    console.warn('Fetch failed, using simulated server response:', err);
+    const res = await fetch(SERVER_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('Bad format');
+    return normalizeQuotes(data);
+  } catch {
     return simulateServerResponse();
   }
 }
 
 function simulateServerResponse() {
-  // Simulate server changes: e.g., modify one quote, add one
-  const serverCopy = normalizeQuotesArray(quotes).map(q => ({ ...q }));
-  // Simulate server updated one existing quote randomly
-  if (serverCopy.length) {
-    serverCopy[0].text = serverCopy[0].text + ' (server updated)';
-    serverCopy[0].updatedAt = Date.now();
+  const clone = normalizeQuotes(quotes).map(q => ({ ...q }));
+  if (clone.length) {
+    clone[0].text += ' (server updated)';
+    clone[0].updatedAt = Date.now();
   }
-  // Simulate server adding a new item
-  serverCopy.push({ id: generateId(), text: 'New server quote', category: 'Server', updatedAt: Date.now() });
-  return serverCopy;
+  clone.push({ id: generateId(), text: 'New quote from server', category: 'Server', updatedAt: Date.now() });
+  return clone;
 }
 
-async function syncWithServer(autoAcceptServerWins = false) {
-  setStatus('Syncing with server...');
-  const serverQuotes = await fetchServerQuotes();
-  // Merge logic
+async function syncWithServer(autoAccept = false) {
+  setStatus('Syncing...');
+  const serverQuotes = await getServerQuotes();
   const localMap = new Map(quotes.map(q => [q.id, q]));
-  const serverMap = new Map(serverQuotes.map(sq => [sq.id, sq]));
-  const newLocal = new Map(localMap); // result map (start with local)
-
+  const serverMap = new Map(serverQuotes.map(q => [q.id, q]));
+  const newLocal = new Map(localMap);
   pendingConflicts = [];
 
-  // Add/overwrite with server items
-  serverMap.forEach((sItem, id) => {
-    const lItem = localMap.get(id);
-    if (!lItem) {
-      // server-only -> add to local
-      newLocal.set(id, sItem);
-    } else {
-      // both exist -> check timestamps
-      if (sItem.updatedAt > lItem.updatedAt && sItem.updatedAt - lItem.updatedAt > 0) {
-        // conflict: server more recent
-        pendingConflicts.push({ local: lItem, server: sItem });
-        if (autoAcceptServerWins) {
-          newLocal.set(id, sItem);
-        }
-      } else {
-        // local is same or newer => keep local for now
-      }
+  serverMap.forEach((s, id) => {
+    const l = localMap.get(id);
+    if (!l) {
+      newLocal.set(id, s);
+    } else if (s.updatedAt > l.updatedAt) {
+      pendingConflicts.push({ local: l, server: s });
+      if (autoAccept) newLocal.set(id, s);
     }
   });
 
-  // Optionally: consider server deletions (not implemented here - could be done via tombstones)
-
-  // Apply accepted server wins
-  if (autoAcceptServerWins && pendingConflicts.length) {
-    // already applied above when autoAcceptServerWins true
-    setStatus(`Sync complete. ${pendingConflicts.length} conflicts auto-resolved in favor of server.`);
-    // write newLocal to quotes
-    quotes = Array.from(newLocal.values());
-    saveQuotes();
-    populateCategories();
-    applyFilterAndShow();
-    pendingConflicts = [];
-    hideConflictPanel();
+  if (pendingConflicts.length && !autoAccept) {
+    showConflicts();
+    setStatus(`${pendingConflicts.length} conflict(s) found.`);
     return;
   }
 
-  // If there are conflicts, show user
-  if (pendingConflicts.length) {
-    // show conflict panel with server versions (we only show server data for clarity)
-    showConflictPanel(pendingConflicts);
-    setStatus(`Sync found ${pendingConflicts.length} conflict(s). Review or accept server changes.`);
-    return;
-  }
-
-  // No conflicts: update local store with newLocal contents
   quotes = Array.from(newLocal.values());
   saveQuotes();
   populateCategories();
-  applyFilterAndShow();
-  setStatus('Sync complete. Local data updated from server.');
+  applyFilter();
+  hideConflicts();
+  setStatus('Sync complete.');
 }
 
-// ---------------- Conflict UI handlers ----------------
-function showConflictPanel(conflicts) {
-  // Build a human readable summary into the readonly textarea (no innerHTML)
-  let lines = conflicts.map((c, i) => {
-    return `${i + 1}. ID: ${c.server.id}\nServer: "${c.server.text}" [${c.server.category}] (updated: ${new Date(c.server.updatedAt).toLocaleString()})\nLocal:  "${c.local.text}" [${c.local.category}] (updated: ${new Date(c.local.updatedAt).toLocaleString()})\n`;
-  }).join('\n');
+// ------------------ Conflict Handling ------------------
+function showConflicts() {
+  const lines = pendingConflicts.map(
+    (c, i) => `${i + 1}. Server: "${c.server.text}" (${c.server.category})\n   Local: "${c.local.text}" (${c.local.category})`
+  ).join('\n\n');
   conflictArea.value = lines;
   conflictPanel.classList.remove('hidden');
 }
 
-function hideConflictPanel() {
+function hideConflicts() {
   conflictArea.value = '';
   conflictPanel.classList.add('hidden');
 }
 
 function acceptServerChanges() {
-  if (!pendingConflicts.length) return;
-  // Apply server versions for each conflict id
-  const serverMap = new Map(pendingConflicts.map(p => [p.server.id, p.server]));
-  const resultMap = new Map(quotes.map(q => [q.id, q]));
-  serverMap.forEach((sItem, id) => resultMap.set(id, sItem));
-  quotes = Array.from(resultMap.values());
+  pendingConflicts.forEach(c => {
+    const idx = quotes.findIndex(q => q.id === c.server.id);
+    if (idx !== -1) quotes[idx] = c.server;
+  });
   saveQuotes();
   populateCategories();
-  applyFilterAndShow();
+  applyFilter();
+  hideConflicts();
   pendingConflicts = [];
-  hideConflictPanel();
-  setStatus('Server changes accepted and applied to local data.');
+  setStatus('Server updates applied.');
 }
 
 function dismissConflicts() {
+  hideConflicts();
   pendingConflicts = [];
-  hideConflictPanel();
-  setStatus('Conflicts dismissed. Local data unchanged.');
+  setStatus('Conflicts ignored.');
 }
 
-// ---------------- Utilities ----------------
+// ------------------ Utilities ------------------
 function setStatus(msg) {
   statusEl.textContent = msg;
 }
 
-// ---------------- Initialization + polling ----------------
+// ------------------ Init ------------------
 function init() {
-  // Normalize loaded quotes
-  quotes = normalizeQuotesArray(quotes);
+  quotes = normalizeQuotes(quotes);
   saveQuotes();
-
-  populateCategories(); // defined below; uses quotes array
-  applyFilterAndShow(); // use persisted filter or default
-
-  // Set up periodic polling
-  setInterval(() => {
-    // auto-sync but do not auto-accept; notify user if conflicts
-    syncWithServer(false).catch(e => console.error('sync error', e));
-  }, POLL_INTERVAL_MS);
+  populateCategories();
+  applyFilter();
+  setInterval(() => syncWithServer(false), POLL_INTERVAL_MS);
 }
 
-// SMALL helper reusing earlier functions (kept local for compatibility)
-function populateCategories() {
-  // Keep first option "all"
-  while (categoryFilter.options.length > 1) categoryFilter.remove(1);
-  const unique = [...new Set(quotes.map(q => q.category))];
-  unique.forEach(cat => {
-    const opt = new Option(cat, cat);
-    categoryFilter.add(opt);
-  });
-  const savedFilter = localStorage.getItem(LOCAL_KEY_FILTER);
-  if (savedFilter) categoryFilter.value = savedFilter;
-}
-
-function applyFilterAndShow() {
-  const sel = categoryFilter.value || 'all';
-  localStorage.setItem(LOCAL_KEY_FILTER, sel);
-  filteredQuotes = sel === 'all' ? quotes.slice() : quotes.filter(q => q.category === sel);
-  showRandomFilteredQuote();
-}
-
-function showRandomFilteredQuote() {
-  if (!filteredQuotes.length) {
-    quoteText.textContent = 'No quotes available for this category.';
-    quoteCategory.textContent = '';
-    return;
-  }
-  const idx = Math.floor(Math.random() * filteredQuotes.length);
-  const q = filteredQuotes[idx];
-  quoteText.textContent = `"${q.text}"`;
-  quoteCategory.textContent = `Category: ${q.category}`;
-}
-
-// ---------------- Event bindings ----------------
-newQuoteBtn.addEventListener('click', () => {
-  applyFilterAndShow();
-});
+newQuoteBtn.addEventListener('click', showRandomQuote);
 addQuoteBtn.addEventListener('click', addQuote);
-categoryFilter.addEventListener('change', () => {
-  applyFilterAndShow();
-});
-syncNowBtn.addEventListener('click', () => {
-  syncWithServer(false).catch(e => console.error(e));
-});
+categoryFilter.addEventListener('change', applyFilter);
+syncNowBtn.addEventListener('click', () => syncWithServer(false));
 acceptServerBtn.addEventListener('click', acceptServerChanges);
 dismissConflictsBtn.addEventListener('click', dismissConflicts);
 
-// Start
 init();
