@@ -118,6 +118,8 @@ function exportQuotesAsJson() {
     exportLink.href = url;
     exportLink.download = 'quotes.json';
     exportLink.click();
+    exportBtn.textContent = "Download Quotes JSON";
+
 
     // Revoke URL after short delay to allow download to start
     setTimeout(() => {
@@ -215,3 +217,4 @@ importFileInput.addEventListener('change', (ev) => {
 
 // initialize UI
 initOnLoad();
+
