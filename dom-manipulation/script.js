@@ -6,6 +6,17 @@ let quotes = [
   { text: "Do what you can, with what you have, where you are.", category: "Wisdom" }
 ];
 
+  function importFromJsonFile(event) {
+    const fileReader = new FileReader();
+    fileReader.onload = function(event) {
+      const importedQuotes = JSON.parse(event.target.result);
+      quotes.push(...importedQuotes);
+      saveQuotes();
+      alert('Quotes imported successfully!');
+    };
+    fileReader.readAsText(event.target.files[0]);
+  }
+
 // Step 2: Reference DOM elements
 const quoteDisplay = document.getElementById("quoteDisplay");
 const quoteText = document.getElementById("quoteText");
@@ -87,3 +98,4 @@ newQuoteBtn.addEventListener("click", showRandomQuote);
 
 // Step 7: Initialize the form
 createAddQuoteForm();
+
