@@ -129,6 +129,34 @@ async function getJoke() {
    Accept: "application/json",
   },
  });
+ async function getServerQuotes() {
+  try {
+    const res = await fetch(SERVER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      cache: 'no-store',
+      body: JSON.stringify({
+        category: 'motivation',
+        limit: 10
+      })
+    });
+
+    if (!res.ok) throw new Error(HTTP error: ${res.status});
+
+    const data = await res.json();
+
+    if (!Array.isArray(data)) throw new Error('Bad format');
+
+    return normalizeQuotes(data);
+
+  } catch (error) {
+    console.error('Fetch failed:', error.message);
+    return simulateServerResponse();
+  }
+}
 
  const data = await res.json();
  display.innerHTML = data.joke;
@@ -230,5 +258,6 @@ acceptServerBtn.addEventListener('click', acceptServerChanges);
 dismissConflictsBtn.addEventListener('click', dismissConflicts);
 
 init();
+
 
 
