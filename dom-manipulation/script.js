@@ -200,7 +200,7 @@ async function syncWithServer(autoAccept = false) {
   populateCategories();
   applyFilter();
   hideConflicts();
-  setStatus('Sync complete.');
+  setStatus('Quotes synced with server!');
 }
 
 // ------------------ Conflict Handling ------------------
@@ -258,6 +258,7 @@ acceptServerBtn.addEventListener('click', acceptServerChanges);
 dismissConflictsBtn.addEventListener('click', dismissConflicts);
 
 init();
+
 
 
 
