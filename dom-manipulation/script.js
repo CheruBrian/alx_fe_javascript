@@ -1,4 +1,4 @@
-// server-simulator.js
+ // server-simulator.js
 class ServerSimulator {
     constructor() {
         this.baseUrl = 'https://jsonplaceholder.typicode.com';
@@ -66,3 +66,4 @@ class ServerSimulator {
         return new Date().toISOString();
     }
 }
+
