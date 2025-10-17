@@ -123,6 +123,16 @@ async function getServerQuotes() {
   }
 }
 
+async function getJoke() {
+ const res = await fetch(api, {
+  headers: {
+   Accept: "application/json",
+  },
+ });
+
+ const data = await res.json();
+ display.innerHTML = data.joke;
+
 function simulateServerResponse() {
   const clone = normalizeQuotes(quotes).map(q => ({ ...q }));
   if (clone.length) {
@@ -220,4 +230,5 @@ acceptServerBtn.addEventListener('click', acceptServerChanges);
 dismissConflictsBtn.addEventListener('click', dismissConflicts);
 
 init();
+
 
