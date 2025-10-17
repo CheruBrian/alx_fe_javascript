@@ -129,7 +129,7 @@ async function getJoke() {
    Accept: "application/json",
   },
  });
- async function getServerQuotes() {
+ async function getsyncQuotes() {
   try {
     const res = await fetch(SERVER_URL, {
       method: 'POST',
@@ -258,6 +258,7 @@ acceptServerBtn.addEventListener('click', acceptServerChanges);
 dismissConflictsBtn.addEventListener('click', dismissConflicts);
 
 init();
+
 
 
 
