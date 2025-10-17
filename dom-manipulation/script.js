@@ -1,4 +1,4 @@
-// Dynamic Quote Generator with Web Storage + Server Sync (Checker-safe)
+ // Dynamic Quote Generator with Web Storage + Server Sync (Checker-safe)
 // Note: No use of "fetchQuotesFromServer" as per constraints
 
 const SERVER_URL = 'https://jsonplaceholder.typicode.com/posts'; // replace with your API
@@ -220,3 +220,4 @@ acceptServerBtn.addEventListener('click', acceptServerChanges);
 dismissConflictsBtn.addEventListener('click', dismissConflicts);
 
 init();
+
